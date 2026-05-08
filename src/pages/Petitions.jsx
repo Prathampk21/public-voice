@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Share2 } from "lucide-react";
+import { QrCode, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import api from "../api/api";
+import ShareQrModal from "../components/ShareQrModal";
 
 const Petitions = () => {
   const [petitions, setPetitions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPetition, setSelectedPetition] = useState(null);
 
   const fetchPetitions = async () => {
     try {
@@ -29,7 +31,6 @@ const Petitions = () => {
 
   const handleSharePetition = async (petition) => {
     const petitionUrl = `${window.location.origin}/petitions/${petition._id}`;
-
     const shareText = `Support this petition: ${petition.title}`;
 
     try {
@@ -48,6 +49,17 @@ const Petitions = () => {
         toast.error("Unable to share petition");
       }
     }
+  };
+
+  const handleOpenQr = (petition) => {
+    setSelectedPetition({
+      title: petition.title,
+      url: `${window.location.origin}/petitions/${petition._id}`
+    });
+  };
+
+  const handleCloseQr = () => {
+    setSelectedPetition(null);
   };
 
   return (
@@ -118,12 +130,29 @@ const Petitions = () => {
                     <Share2 size={16} />
                     Share
                   </button>
+
+                  <button
+                    type="button"
+                    className="share-btn"
+                    onClick={() => handleOpenQr(petition)}
+                  >
+                    <QrCode size={16} />
+                    QR Code
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <ShareQrModal
+        isOpen={!!selectedPetition}
+        onClose={handleCloseQr}
+        title={selectedPetition?.title || ""}
+        url={selectedPetition?.url || ""}
+        typeLabel="Petition"
+      />
     </div>
   );
 };
