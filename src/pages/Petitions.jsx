@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Share2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import api from "../api/api";
 
@@ -24,6 +26,29 @@ const Petitions = () => {
   useEffect(() => {
     fetchPetitions();
   }, []);
+
+  const handleSharePetition = async (petition) => {
+    const petitionUrl = `${window.location.origin}/petitions/${petition._id}`;
+
+    const shareText = `Support this petition: ${petition.title}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: petition.title,
+          text: shareText,
+          url: petitionUrl
+        });
+      } else {
+        await navigator.clipboard.writeText(petitionUrl);
+        toast.success("Petition link copied to clipboard");
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        toast.error("Unable to share petition");
+      }
+    }
+  };
 
   return (
     <div className="page-container">
@@ -77,12 +102,23 @@ const Petitions = () => {
                   />
                 </div>
 
-                <Link
-                  to={`/petitions/${petition._id}`}
-                  className="secondary-btn small-btn"
-                >
-                  View Petition
-                </Link>
+                <div className="card-actions">
+                  <Link
+                    to={`/petitions/${petition._id}`}
+                    className="secondary-btn small-btn"
+                  >
+                    View Petition
+                  </Link>
+
+                  <button
+                    type="button"
+                    className="share-btn"
+                    onClick={() => handleSharePetition(petition)}
+                  >
+                    <Share2 size={16} />
+                    Share
+                  </button>
+                </div>
               </div>
             );
           })}
