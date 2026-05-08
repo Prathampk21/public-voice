@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Share2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import api from "../api/api";
 
@@ -25,6 +27,29 @@ const Polls = () => {
     fetchPolls();
   }, []);
 
+  const handleSharePoll = async (poll) => {
+    const pollUrl = `${window.location.origin}/polls/${poll._id}`;
+
+    const shareText = `Vote on this poll: ${poll.title}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: poll.title,
+          text: shareText,
+          url: pollUrl
+        });
+      } else {
+        await navigator.clipboard.writeText(pollUrl);
+        toast.success("Poll link copied to clipboard");
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        toast.error("Unable to share poll");
+      }
+    }
+  };
+
   return (
     <div className="page-container">
       <div className="page-header row-header">
@@ -47,7 +72,9 @@ const Polls = () => {
           {polls.map((poll) => (
             <div className="content-card" key={poll._id}>
               <span className="badge">{poll.category}</span>
+
               <h3>{poll.title}</h3>
+
               <p>{poll.description}</p>
 
               <div className="meta-row">
@@ -55,9 +82,20 @@ const Polls = () => {
                 <span>{poll.status}</span>
               </div>
 
-              <Link to={`/polls/${poll._id}`} className="secondary-btn small-btn">
-                View Poll
-              </Link>
+              <div className="card-actions">
+                <Link to={`/polls/${poll._id}`} className="secondary-btn small-btn">
+                  View Poll
+                </Link>
+
+                <button
+                  type="button"
+                  className="share-btn"
+                  onClick={() => handleSharePoll(poll)}
+                >
+                  <Share2 size={16} />
+                  Share
+                </button>
+              </div>
             </div>
           ))}
         </div>
