@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { QrCode, Share2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { Share2 } from "lucide-react";
 
 import api from "../api/api";
-import ShareQrModal from "../components/ShareQrModal";
+import SharePopover from "../components/SharePopover";
 
 const Petitions = () => {
   const [petitions, setPetitions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPetition, setSelectedPetition] = useState(null);
+  const [openShareId, setOpenShareId] = useState(null);
 
   const fetchPetitions = async () => {
     try {
@@ -29,37 +28,8 @@ const Petitions = () => {
     fetchPetitions();
   }, []);
 
-  const handleSharePetition = async (petition) => {
-    const petitionUrl = `${window.location.origin}/petitions/${petition._id}`;
-    const shareText = `Support this petition: ${petition.title}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: petition.title,
-          text: shareText,
-          url: petitionUrl
-        });
-      } else {
-        await navigator.clipboard.writeText(petitionUrl);
-        toast.success("Petition link copied to clipboard");
-      }
-    } catch (error) {
-      if (error.name !== "AbortError") {
-        toast.error("Unable to share petition");
-      }
-    }
-  };
-
-  const handleOpenQr = (petition) => {
-    setSelectedPetition({
-      title: petition.title,
-      url: `${window.location.origin}/petitions/${petition._id}`
-    });
-  };
-
-  const handleCloseQr = () => {
-    setSelectedPetition(null);
+  const toggleShareBox = (petitionId) => {
+    setOpenShareId((prev) => (prev === petitionId ? null : petitionId));
   };
 
   return (
@@ -122,37 +92,29 @@ const Petitions = () => {
                     View Petition
                   </Link>
 
-                  <button
-                    type="button"
-                    className="share-btn"
-                    onClick={() => handleSharePetition(petition)}
-                  >
-                    <Share2 size={16} />
-                    Share
-                  </button>
+                  <div className="share-anchor">
+                    <button
+                      type="button"
+                      className="share-btn"
+                      onClick={() => toggleShareBox(petition._id)}
+                    >
+                      <Share2 size={16} />
+                      Share
+                    </button>
 
-                  <button
-                    type="button"
-                    className="share-btn"
-                    onClick={() => handleOpenQr(petition)}
-                  >
-                    <QrCode size={16} />
-                    QR Code
-                  </button>
+                    <SharePopover
+                      isOpen={openShareId === petition._id}
+                      onClose={() => setOpenShareId(null)}
+                      title={petition.title}
+                      url={`${window.location.origin}/petitions/${petition._id}`}
+                    />
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
-
-      <ShareQrModal
-        isOpen={!!selectedPetition}
-        onClose={handleCloseQr}
-        title={selectedPetition?.title || ""}
-        url={selectedPetition?.url || ""}
-        typeLabel="Petition"
-      />
     </div>
   );
 };
