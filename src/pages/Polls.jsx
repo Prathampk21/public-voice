@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { QrCode, Share2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { Share2 } from "lucide-react";
 
 import api from "../api/api";
-import ShareQrModal from "../components/ShareQrModal";
+import SharePopover from "../components/SharePopover";
 
 const Polls = () => {
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPoll, setSelectedPoll] = useState(null);
+  const [openShareId, setOpenShareId] = useState(null);
 
   const fetchPolls = async () => {
     try {
@@ -29,37 +28,8 @@ const Polls = () => {
     fetchPolls();
   }, []);
 
-  const handleSharePoll = async (poll) => {
-    const pollUrl = `${window.location.origin}/polls/${poll._id}`;
-    const shareText = `Vote on this poll: ${poll.title}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: poll.title,
-          text: shareText,
-          url: pollUrl
-        });
-      } else {
-        await navigator.clipboard.writeText(pollUrl);
-        toast.success("Poll link copied to clipboard");
-      }
-    } catch (error) {
-      if (error.name !== "AbortError") {
-        toast.error("Unable to share poll");
-      }
-    }
-  };
-
-  const handleOpenQr = (poll) => {
-    setSelectedPoll({
-      title: poll.title,
-      url: `${window.location.origin}/polls/${poll._id}`
-    });
-  };
-
-  const handleCloseQr = () => {
-    setSelectedPoll(null);
+  const toggleShareBox = (pollId) => {
+    setOpenShareId((prev) => (prev === pollId ? null : pollId));
   };
 
   return (
@@ -102,36 +72,28 @@ const Polls = () => {
                   View Poll
                 </Link>
 
-                <button
-                  type="button"
-                  className="share-btn"
-                  onClick={() => handleSharePoll(poll)}
-                >
-                  <Share2 size={16} />
-                  Share
-                </button>
+                <div className="share-anchor">
+                  <button
+                    type="button"
+                    className="share-btn"
+                    onClick={() => toggleShareBox(poll._id)}
+                  >
+                    <Share2 size={16} />
+                    Share
+                  </button>
 
-                <button
-                  type="button"
-                  className="share-btn"
-                  onClick={() => handleOpenQr(poll)}
-                >
-                  <QrCode size={16} />
-                  QR Code
-                </button>
+                  <SharePopover
+                    isOpen={openShareId === poll._id}
+                    onClose={() => setOpenShareId(null)}
+                    title={poll.title}
+                    url={`${window.location.origin}/polls/${poll._id}`}
+                  />
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      <ShareQrModal
-        isOpen={!!selectedPoll}
-        onClose={handleCloseQr}
-        title={selectedPoll?.title || ""}
-        url={selectedPoll?.url || ""}
-        typeLabel="Poll"
-      />
     </div>
   );
 };
