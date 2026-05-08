@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Share2 } from "lucide-react";
+import { QrCode, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import api from "../api/api";
+import ShareQrModal from "../components/ShareQrModal";
 
 const Polls = () => {
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPoll, setSelectedPoll] = useState(null);
 
   const fetchPolls = async () => {
     try {
@@ -29,7 +31,6 @@ const Polls = () => {
 
   const handleSharePoll = async (poll) => {
     const pollUrl = `${window.location.origin}/polls/${poll._id}`;
-
     const shareText = `Vote on this poll: ${poll.title}`;
 
     try {
@@ -48,6 +49,17 @@ const Polls = () => {
         toast.error("Unable to share poll");
       }
     }
+  };
+
+  const handleOpenQr = (poll) => {
+    setSelectedPoll({
+      title: poll.title,
+      url: `${window.location.origin}/polls/${poll._id}`
+    });
+  };
+
+  const handleCloseQr = () => {
+    setSelectedPoll(null);
   };
 
   return (
@@ -83,7 +95,10 @@ const Polls = () => {
               </div>
 
               <div className="card-actions">
-                <Link to={`/polls/${poll._id}`} className="secondary-btn small-btn">
+                <Link
+                  to={`/polls/${poll._id}`}
+                  className="secondary-btn small-btn"
+                >
                   View Poll
                 </Link>
 
@@ -95,11 +110,28 @@ const Polls = () => {
                   <Share2 size={16} />
                   Share
                 </button>
+
+                <button
+                  type="button"
+                  className="share-btn"
+                  onClick={() => handleOpenQr(poll)}
+                >
+                  <QrCode size={16} />
+                  QR Code
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <ShareQrModal
+        isOpen={!!selectedPoll}
+        onClose={handleCloseQr}
+        title={selectedPoll?.title || ""}
+        url={selectedPoll?.url || ""}
+        typeLabel="Poll"
+      />
     </div>
   );
 };
